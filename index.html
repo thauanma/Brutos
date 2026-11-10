@@ -1,0 +1,47 @@
+-- 1. Tabela de Produtos da Loja
+create table products (
+  id text primary key,
+  sku text not null,
+  name text not null,
+  category text not null,
+  price numeric not null,
+  rating numeric default 5.0,
+  reviews_count integer default 1,
+  stock integer default 10,
+  colors jsonb default '["Couro Pinhão", "Café Tabaco"]'::jsonb,
+  sizes jsonb default '["P", "M", "G", "GG"]'::jsonb,
+  badge text,
+  image text not null,
+  gallery jsonb default '[]'::jsonb,
+  description text,
+  materials text,
+  created_at timestamp with time zone default now()
+);
+
+-- 2. Tabela de Usuários e Administradores
+create table users (
+  id uuid default gen_random_uuid() primary key,
+  name text not null,
+  email text unique not null,
+  password text not null,
+  role text default 'cliente',
+  is_owner boolean default false,
+  created_at timestamp with time zone default now()
+);
+
+-- 3. Inserir sua conta de Proprietário Master no banco
+insert into users (name, email, password, role, is_owner)
+values ('Thauan Marques (Proprietário)', 'thauanmarques095@gmail.com', '975613', 'owner', true);
+
+-- 4. Tabela de Pedidos
+create table orders (
+  order_id text primary key,
+  customer text not null,
+  phone text not null,
+  address text not null,
+  payment_method text not null,
+  total numeric not null,
+  status text default 'Aguardando Confirmação de Pagamento',
+  items jsonb not null,
+  created_at timestamp with time zone default now()
+);
