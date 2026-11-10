@@ -1,47 +1,1920 @@
--- 1. Tabela de Produtos da Loja
-create table products (
-  id text primary key,
-  sku text not null,
-  name text not null,
-  category text not null,
-  price numeric not null,
-  rating numeric default 5.0,
-  reviews_count integer default 1,
-  stock integer default 10,
-  colors jsonb default '["Couro Pinhão", "Café Tabaco"]'::jsonb,
-  sizes jsonb default '["P", "M", "G", "GG"]'::jsonb,
-  badge text,
-  image text not null,
-  gallery jsonb default '[]'::jsonb,
-  description text,
-  materials text,
-  created_at timestamp with time zone default now()
-);
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESTÂNCIA IMPERIAL — Western Store & Alta Moda Country</title>
+    <meta name="description" content="Alta Moda Country Brasileira, Botas Texanas Artesanais, Chapéus de Feltro 20X e Camisaria Sertaneja.">
+    <meta name="theme-color" content="#271910">
+    
+    <!-- Google Fonts: Rye & BioRhyme (Tipografia Western Slab-Serif Jackson's Western Store) + Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=BioRhyme:wght@700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Rye&display=swap" rel="stylesheet">
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
--- 2. Tabela de Usuários e Administradores
-create table users (
-  id uuid default gen_random_uuid() primary key,
-  name text not null,
-  email text unique not null,
-  password text not null,
-  role text default 'cliente',
-  is_owner boolean default false,
-  created_at timestamp with time zone default now()
-);
+    <!-- Supabase JS Client SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
--- 3. Inserir sua conta de Proprietário Master no banco
-insert into users (name, email, password, role, is_owner)
-values ('Thauan Marques (Proprietário)', 'thauanmarques095@gmail.com', '975613', 'owner', true);
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['"Rye"', '"BioRhyme"', 'Georgia', 'serif'],
+                        western: ['"Rye"', '"BioRhyme"', 'Georgia', 'serif'],
+                        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        country: {
+                            50: '#FAF7F2',
+                            100: '#F2ECE1',
+                            200: '#E4D6C1',
+                            300: '#D4BC9B',
+                            400: '#C88A4B',
+                            500: '#B57335',
+                            600: '#8F5622',
+                            700: '#6E4019',
+                            800: '#4A2C17',
+                            900: '#271910',
+                            950: '#160E09',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 
--- 4. Tabela de Pedidos
-create table orders (
-  order_id text primary key,
-  customer text not null,
-  phone text not null,
-  address text not null,
-  payment_method text not null,
-  total numeric not null,
-  status text default 'Aguardando Confirmação de Pagamento',
-  items jsonb not null,
-  created_at timestamp with time zone default now()
-);
+    <style>
+        :root {
+            --brand-accent: #C88A4B;
+            --brand-accent-dark: #8F5622;
+            --bg-light: #FAF7F2;
+            --bg-dark: #160E09;
+        }
+
+        /* Tipografia Western Tuscan/Slab-Serif (Jackson's Western Store) aplicada em todas as Heading Tags */
+        h1, h2, h3, h4, h5, h6,
+        .font-serif,
+        .western-heading {
+            font-family: 'Rye', 'BioRhyme', Georgia, serif !important;
+            font-weight: 400 !important;
+            letter-spacing: 0.02em;
+        }
+
+        h1::first-letter,
+        h2::first-letter {
+            font-size: 1.15em;
+            line-height: 0.9;
+        }
+
+        .western-display-logo {
+            font-family: 'Rye', 'BioRhyme', serif !important;
+            font-weight: 400 !important;
+            letter-spacing: 0.02em;
+        }
+
+        .western-drop-initial {
+            display: inline-block;
+            font-family: 'Rye', 'BioRhyme', serif;
+            font-size: 1.25em;
+            line-height: 0.85;
+            vertical-align: -0.05em;
+            margin-right: 1px;
+        }
+
+        .western-tracked-sub {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            letter-spacing: 0.38em;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-light);
+            color: #271910;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body.dark {
+            background-color: var(--bg-dark);
+            color: #F2ECE1;
+        }
+
+        .ambient-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            background-image: url('https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=2000&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            opacity: 0.08;
+            filter: sepia(45%) saturate(125%);
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .dark .ambient-bg {
+            opacity: 0.14;
+            filter: sepia(55%) contrast(115%);
+        }
+
+        .western-warm-img {
+            filter: sepia(22%) saturate(120%) contrast(104%) brightness(96%);
+            transition: transform 0.95s cubic-bezier(0.16, 1, 0.3, 1), filter 0.6s ease;
+            will-change: transform;
+        }
+        .group:hover .western-warm-img {
+            filter: sepia(12%) saturate(125%) contrast(106%) brightness(100%);
+        }
+
+        /* Botão Acrílico Transparente */
+        .btn-acrylic {
+            background: rgba(255, 255, 255, 0.16);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.38);
+            color: #FFFFFF;
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .btn-acrylic:hover {
+            background: rgba(255, 255, 255, 0.28);
+            border-color: rgba(255, 255, 255, 0.65);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+        }
+
+        .btn-acrylic-surface {
+            background: rgba(200, 138, 75, 0.10);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(200, 138, 75, 0.38);
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .btn-acrylic-surface:hover {
+            background: rgba(200, 138, 75, 0.22);
+            border-color: rgba(200, 138, 75, 0.75);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px -4px rgba(181, 115, 53, 0.2);
+        }
+
+        .glass-panel {
+            background: rgba(250, 247, 242, 0.86);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(212, 188, 155, 0.45);
+        }
+        .dark .glass-panel {
+            background: rgba(28, 18, 12, 0.86);
+            border: 1px solid rgba(200, 138, 75, 0.22);
+        }
+
+        /* Botão Gradiente Country */
+        .btn-gradient-country {
+            background: linear-gradient(135deg, var(--brand-accent) 0%, #9E5E26 50%, #5E3310 100%);
+            background-size: 200% 200%;
+            color: #FFFFFF;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 6px 20px -4px rgba(150, 89, 36, 0.45);
+        }
+        .btn-gradient-country:hover {
+            background-position: 100% 50%;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 26px -5px rgba(150, 89, 36, 0.65);
+        }
+
+        /* Hero Accordion com transição em 0.95s fluida */
+        .hero-accordion {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            height: 660px;
+            transform: translateZ(0);
+        }
+        @media (min-width: 1024px) {
+            .hero-accordion {
+                flex-direction: row;
+                gap: 0;
+                height: 610px;
+            }
+        }
+        .hero-panel {
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            flex: 1 1 0%;
+            min-width: 72px;
+            min-height: 76px;
+            border-right: 1px solid rgba(242, 236, 225, 0.16);
+            will-change: flex-grow;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            transition: flex-grow 0.95s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .hero-panel:last-child {
+            border-right: none;
+        }
+        .hero-panel.active {
+            flex-grow: 3.6;
+        }
+        @media (max-width: 1023px) {
+            .hero-panel.active {
+                flex-grow: 4.2;
+            }
+        }
+
+        .hero-panel .hero-bg-img {
+            transform: scale(1.09);
+            transition: transform 0.95s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform;
+        }
+        .hero-panel.active .hero-bg-img {
+            transform: scale(1.0);
+        }
+
+        .hero-vertical-wrap {
+            position: absolute;
+            bottom: 1.75rem;
+            left: 1.35rem;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.15s, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
+            pointer-events: none;
+        }
+        @media (min-width: 1024px) {
+            .hero-panel.active .hero-vertical-wrap {
+                opacity: 0;
+                transform: translateY(14px);
+                transition: opacity 0.22s ease, transform 0.25s ease;
+            }
+        }
+        .hero-vertical-label {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            letter-spacing: 0.22em;
+            white-space: nowrap;
+        }
+
+        .hero-content-stage {
+            position: absolute;
+            inset: 0;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            text-align: center;
+            padding: 1.75rem;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        @media (min-width: 640px) {
+            .hero-content-stage {
+                padding: 2.75rem;
+            }
+        }
+        .hero-content-inner {
+            width: 82vw;
+            max-width: 500px;
+            flex-shrink: 0;
+            opacity: 0;
+            transform: translateY(22px) scale(0.97);
+            transition: opacity 0.22s ease, transform 0.3s ease;
+            will-change: opacity, transform;
+        }
+        .hero-panel.active .hero-content-inner {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+            transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1) 0.18s, transform 0.65s cubic-bezier(0.16, 1, 0.3, 1) 0.14s;
+        }
+
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: translateY(10px) scale(0.99); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .animate-view {
+            animation: fadeInScale 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-country-400 selection:text-white transition-colors duration-300">
+
+    <div class="ambient-bg" aria-hidden="true"></div>
+
+    <!-- Barra Superior -->
+    <div class="bg-country-900 text-country-100 text-xs py-2 px-4 border-b border-country-700/50 relative z-40">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider uppercase bg-country-500 text-white">
+                    <i class="ph-fill ph-seal-check mr-1"></i> Garantia Estância
+                </span>
+                <span id="topPromoBannerText" class="text-country-200">
+                    Couro Legítimo & Feltros Nobres • Envio Segurado para todo o Brasil
+                </span>
+            </div>
+            <div class="hidden sm:flex items-center gap-4 ml-auto text-[11px] text-country-300">
+                <span><i class="ph-fill ph-truck mr-1"></i>Primeira Troca de Numeração Grátis</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- CABEÇALHO -->
+    <header class="sticky top-0 z-30 glass-panel transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-3 items-center h-20">
+                
+                <!-- Esquerda -->
+                <div class="flex items-center gap-3 sm:gap-6">
+                    <button onclick="app.toggleMobileMenu()" aria-label="Abrir menu de navegação" class="p-2 -ml-2 rounded-lg hover:bg-country-200/40 dark:hover:bg-country-800/50 transition-colors flex items-center gap-2 text-sm font-medium">
+                        <i class="ph ph-list text-xl"></i>
+                        <span class="hidden sm:inline tracking-wide">Menu</span>
+                    </button>
+
+                    <button onclick="app.navigate('catalog')" class="hidden md:flex items-center gap-1.5 text-sm font-medium hover:text-country-500 transition-colors">
+                        <span>Coleção</span>
+                    </button>
+
+                    <button onclick="app.openSearchModal()" aria-label="Pesquisar produtos" class="flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-full btn-acrylic-surface">
+                        <i class="ph ph-magnifying-glass text-base"></i>
+                        <span class="hidden sm:inline text-xs tracking-wide opacity-85">Pesquisar...</span>
+                    </button>
+                </div>
+
+                <!-- Centro: Logotipo Western -->
+                <div class="text-center">
+                    <button onclick="app.navigate('home')" class="group inline-flex flex-col items-center focus:outline-none">
+                        <span id="brandLogoText" class="western-display-logo text-xl sm:text-3xl md:text-4xl tracking-normal text-country-900 dark:text-country-50 group-hover:text-country-500 transition-colors leading-none">
+                            <span class="western-drop-initial">E</span>stância Imperial
+                        </span>
+                        <span class="western-tracked-sub text-[9px] sm:text-[10px] text-country-600 dark:text-country-300 mt-1">
+                            WESTERN STORE
+                        </span>
+                    </button>
+                </div>
+
+                <!-- Direita -->
+                <div class="flex items-center justify-end gap-1.5 sm:gap-3">
+                    <button onclick="app.openContactModal()" class="hidden lg:inline-flex text-xs font-medium tracking-wide uppercase px-3 py-1.5 rounded-full hover:bg-country-200/50 dark:hover:bg-country-800/40 transition-colors">
+                        Atendimento
+                    </button>
+
+                    <button onclick="app.toggleTheme()" aria-label="Alternar tema" class="p-2.5 rounded-full hover:bg-country-200/50 dark:hover:bg-country-800/50 transition-colors" title="Tema Claro/Escuro">
+                        <i id="themeIcon" class="ph ph-moon text-lg"></i>
+                    </button>
+
+                    <button onclick="app.openWishlistDrawer()" aria-label="Lista de Favoritos" class="relative p-2.5 rounded-full hover:bg-country-200/50 dark:hover:bg-country-800/50 transition-colors" title="Meus Favoritos">
+                        <i class="ph ph-heart text-lg"></i>
+                        <span id="wishlistBadge" class="hidden absolute top-1 right-1 w-4 h-4 rounded-full bg-country-500 text-white text-[10px] font-bold flex items-center justify-center">0</span>
+                    </button>
+
+                    <!-- Ícone de Login/Conta -->
+                    <button onclick="app.handleUserIconClick()" aria-label="Minha Conta" class="relative p-2.5 rounded-full hover:bg-country-200/50 dark:hover:bg-country-800/50 transition-colors flex items-center gap-1.5" title="Minha Conta">
+                        <i id="userAccountIcon" class="ph ph-user text-lg"></i>
+                        <span id="userStatusLabel" class="hidden xl:inline text-xs font-medium max-w-[90px] truncate">Entrar</span>
+                    </button>
+
+                    <button onclick="app.openCartDrawer()" aria-label="Sacola de Compras" class="relative p-2.5 rounded-full btn-gradient-country flex items-center gap-1.5 px-3.5 py-2">
+                        <i class="ph ph-handbag text-lg"></i>
+                        <span id="cartCountBadge" class="text-xs font-bold">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Categorias Principais -->
+            <nav aria-label="Categorias principais" class="border-t border-country-200/70 dark:border-country-800/70 py-2.5 overflow-x-auto no-scrollbar">
+                <ul class="flex items-center justify-start sm:justify-center gap-5 sm:gap-8 text-xs sm:text-sm whitespace-nowrap px-1">
+                    <li><button onclick="app.navigate('home')" class="font-semibold text-country-600 dark:text-country-400 hover:text-country-500 transition-colors">Início Editorial</button></li>
+                    <li><button onclick="app.filterByCategoryAndGo('Todos')" class="hover:text-country-500 transition-colors">Mais Vendidos</button></li>
+                    <li><button onclick="app.filterByCategoryAndGo('Botas Texanas')" class="hover:text-country-500 transition-colors">Botas Texanas</button></li>
+                    <li><button onclick="app.filterByCategoryAndGo('Chapéus & Feltros')" class="hover:text-country-500 transition-colors">Chapéus & Feltros</button></li>
+                    <li><button onclick="app.filterByCategoryAndGo('Camisaria')" class="hover:text-country-500 transition-colors">Camisaria Sertaneja</button></li>
+                    <li><button onclick="app.filterByCategoryAndGo('Jaquetas & Couro')" class="hover:text-country-500 transition-colors">Jaquetas & Couro</button></li>
+                    <li><button onclick="app.filterByCategoryAndGo('Fivelas & Cintos')" class="hover:text-country-500 transition-colors">Fivelas & Cintos</button></li>
+                    <li><button onclick="app.openSizeGuideModal()" class="text-country-500 font-medium hover:underline flex items-center gap-1"><i class="ph ph-ruler"></i> Guia de Medidas</button></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- MENU MOBILE -->
+    <div id="mobileMenuOverlay" class="fixed inset-0 z-50 hidden">
+        <div onclick="app.toggleMobileMenu()" class="fixed inset-0 bg-black/60 backdrop-blur-xs"></div>
+        <aside class="fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] glass-panel z-10 p-6 flex flex-col justify-between overflow-y-auto shadow-2xl">
+            <div>
+                <div class="flex items-center justify-between pb-5 border-b border-country-300/40 dark:border-country-800">
+                    <div>
+                        <span class="font-serif text-xl font-bold tracking-tight">Estância Imperial</span>
+                        <p class="text-[10px] uppercase tracking-widest text-country-500">Western Store</p>
+                    </div>
+                    <button onclick="app.toggleMobileMenu()" aria-label="Fechar menu" class="p-2 rounded-full hover:bg-country-200/40 dark:hover:bg-country-800">
+                        <i class="ph ph-x text-xl"></i>
+                    </button>
+                </div>
+
+                <div class="mt-6 space-y-1">
+                    <p class="text-[11px] font-semibold uppercase tracking-widest text-country-500 px-3 mb-2">Coleções</p>
+                    <button onclick="app.navigate('home'); app.toggleMobileMenu();" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-country-200/50 dark:hover:bg-country-800/60 font-medium flex items-center justify-between">
+                        <span>Vitrine Principal</span>
+                        <i class="ph ph-arrow-right"></i>
+                    </button>
+                    <button onclick="app.filterByCategoryAndGo('Todos'); app.toggleMobileMenu();" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-country-200/50 dark:hover:bg-country-800/60 font-medium flex items-center justify-between">
+                        <span>Catálogo Geral</span>
+                        <i class="ph ph-storefront"></i>
+                    </button>
+                    <button onclick="app.filterByCategoryAndGo('Botas Texanas'); app.toggleMobileMenu();" class="w-full text-left px-3 py-2 rounded-xl hover:bg-country-200/50 dark:hover:bg-country-800/60 text-sm flex items-center justify-between">
+                        <span>Botas Texanas</span>
+                        <i class="ph ph-caret-right text-xs"></i>
+                    </button>
+                    <button onclick="app.filterByCategoryAndGo('Chapéus & Feltros'); app.toggleMobileMenu();" class="w-full text-left px-3 py-2 rounded-xl hover:bg-country-200/50 dark:hover:bg-country-800/60 text-sm flex items-center justify-between">
+                        <span>Chapéus & Feltros</span>
+                        <i class="ph ph-caret-right text-xs"></i>
+                    </button>
+                    <button onclick="app.filterByCategoryAndGo('Camisaria'); app.toggleMobileMenu();" class="w-full text-left px-3 py-2 rounded-xl hover:bg-country-200/50 dark:hover:bg-country-800/60 text-sm flex items-center justify-between">
+                        <span>Camisaria Sertaneja</span>
+                        <i class="ph ph-caret-right text-xs"></i>
+                    </button>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-country-300/40 dark:border-country-800 space-y-2">
+                    <button onclick="app.openSizeGuideModal(); app.toggleMobileMenu();" class="w-full text-left px-3 py-2 rounded-xl hover:bg-country-200/50 dark:hover:bg-country-800/60 text-sm flex items-center gap-2.5">
+                        <i class="ph ph-ruler text-lg text-country-500"></i>
+                        <span>Guia de Medidas Country</span>
+                    </button>
+                    <button onclick="app.handleUserIconClick(); app.toggleMobileMenu();" class="w-full text-left px-3 py-2 rounded-xl hover:bg-country-200/50 dark:hover:bg-country-800/60 text-sm flex items-center gap-2.5">
+                        <i class="ph ph-user-circle text-lg text-country-500"></i>
+                        <span>Minha Conta</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- CONTEÚDO PRINCIPAL (SPA) -->
+    <main id="mainContent" class="flex-grow">
+
+        <!-- VIEW 1: HOME -->
+        <div id="view-home" class="animate-view">
+            <!-- HERO ACCORDION -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-12">
+                <div id="heroAccordionContainer" class="hero-accordion rounded-2xl overflow-hidden shadow-2xl border border-country-300/40 dark:border-country-800"></div>
+            </section>
+
+            <!-- BEST SELLERS -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+                    <div>
+                        <span class="text-xs font-bold tracking-[0.22em] uppercase text-country-500 block mb-1">
+                            BEST SELLERS • ALTA DURABILIDADE
+                        </span>
+                        <h2 class="font-serif text-3xl sm:text-4xl font-bold tracking-tight">
+                            Conforto na lida e no rodeio
+                        </h2>
+                    </div>
+                    <button onclick="app.navigate('catalog')" class="btn-acrylic-surface px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold flex items-center gap-2">
+                        <span>Ver Todos os Clássicos</span>
+                        <i class="ph ph-arrow-up-right"></i>
+                    </button>
+                </div>
+                <div id="homeBestSellersGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+            </section>
+
+            <!-- HIGHLIGHTS EDITORIAL -->
+            <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="glass-panel rounded-3xl p-6 sm:p-10 shadow-xl">
+                    <div class="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+                        <div>
+                            <span class="text-xs font-bold tracking-[0.22em] uppercase text-country-500 block mb-1">
+                                CURADORIA DO HARAS • ESTILO AUTÊNTICO
+                            </span>
+                            <h2 class="font-serif text-3xl sm:text-4xl font-bold tracking-tight">
+                                Highlights da Temporada
+                            </h2>
+                        </div>
+                        <p class="text-xs sm:text-sm text-country-600 dark:text-country-300 max-w-md">
+                            Acabamento artesanal em couro bovino selecionado, costuras reforçadas Goodyear Welt e modelagem para o campo.
+                        </p>
+                    </div>
+                    <div id="editorialHighlightsContainer" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch"></div>
+                </div>
+            </section>
+        </div>
+
+        <!-- VIEW 2: CATÁLOGO -->
+        <div id="view-catalog" class="hidden animate-view max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <nav class="text-xs text-country-500 mb-4 flex items-center gap-2">
+                <button onclick="app.navigate('home')" class="hover:underline">Início</button>
+                <i class="ph ph-caret-right text-[10px]"></i>
+                <span class="font-semibold text-country-800 dark:text-country-200" id="catalogBreadcrumbCurrent">Coleção Completa</span>
+            </nav>
+
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+                <div>
+                    <h1 class="font-serif text-3xl sm:text-5xl font-bold tracking-tight leading-none">
+                        Best Sellers<br><span class="font-normal italic text-country-500">Country Collection</span>
+                    </h1>
+                </div>
+                <div class="w-full md:w-80">
+                    <div class="relative">
+                        <i class="ph ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-country-500"></i>
+                        <input 
+                            type="search" 
+                            id="catalogInlineSearch"
+                            oninput="app.handleInlineCatalogSearch(this.value)"
+                            placeholder="Buscar no acervo..." 
+                            class="w-full pl-10 pr-9 py-2.5 rounded-full text-sm glass-panel focus:outline-none focus:ring-2 focus:ring-country-500"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <div id="catalogCategoryPills" class="flex items-center gap-2 overflow-x-auto pb-3 mb-4 no-scrollbar"></div>
+
+            <div class="glass-panel rounded-2xl px-4 py-3 mb-8 flex flex-wrap items-center justify-between gap-4 text-xs sm:text-sm">
+                <div class="flex items-center gap-3">
+                    <button onclick="app.toggleAdvancedFilters()" class="flex items-center gap-2 font-semibold px-3.5 py-1.5 rounded-xl btn-acrylic-surface">
+                        <i class="ph ph-sliders-horizontal text-base"></i>
+                        <span>Filtros</span>
+                    </button>
+                    <button id="resetFiltersBtn" onclick="app.resetCatalogFilters()" class="hidden text-xs text-country-500 underline hover:text-country-700">
+                        Limpar filtros
+                    </button>
+                </div>
+                <div id="catalogProductCounter" class="text-xs sm:text-sm font-medium text-country-600 dark:text-country-300">Exibindo produtos</div>
+                <div class="flex items-center gap-2">
+                    <select id="catalogSortSelect" onchange="app.handleSortChange(this.value)" class="bg-transparent font-semibold text-xs sm:text-sm focus:outline-none cursor-pointer">
+                        <option value="featured" class="bg-country-50 dark:bg-country-900">Destaques</option>
+                        <option value="price-asc" class="bg-country-50 dark:bg-country-900">Menor Preço</option>
+                        <option value="price-desc" class="bg-country-50 dark:bg-country-900">Maior Preço</option>
+                        <option value="name" class="bg-country-50 dark:bg-country-900">Ordem Alfabética</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Filtros Avançados -->
+            <div id="advancedFiltersDrawer" class="hidden glass-panel rounded-2xl p-5 mb-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-country-500 mb-2">Preço Máximo</label>
+                    <input type="range" id="priceRangeFilter" min="150" max="2500" step="50" value="2500" oninput="app.handlePriceFilterChange(this.value)" class="w-full accent-country-500 cursor-pointer">
+                    <div class="flex justify-between text-xs mt-1 font-medium">
+                        <span>R$ 150</span>
+                        <span id="priceRangeLabel" class="text-country-500 font-bold">Até R$ 2.500</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-country-500 mb-2">Tonalidade</label>
+                    <div class="flex flex-wrap gap-2" id="colorFilterButtons">
+                        <button onclick="app.handleColorFilter('Todas')" class="px-3 py-1 rounded-full text-xs border border-country-400 bg-country-500 text-white">Todas</button>
+                        <button onclick="app.handleColorFilter('Couro Pinhão')" class="px-3 py-1 rounded-full text-xs border border-country-300 dark:border-country-700">Couro Pinhão</button>
+                        <button onclick="app.handleColorFilter('Café Tabaco')" class="px-3 py-1 rounded-full text-xs border border-country-300 dark:border-country-700">Café Tabaco</button>
+                        <button onclick="app.handleColorFilter('Preto Ônix')" class="px-3 py-1 rounded-full text-xs border border-country-300 dark:border-country-700">Preto Ônix</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="catalogProductsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+
+            <div id="catalogEmptyState" class="hidden glass-panel rounded-3xl p-12 text-center my-8 max-w-lg mx-auto">
+                <i class="ph ph-magnifying-glass-minus text-4xl text-country-500 mb-3 block"></i>
+                <h3 class="font-serif text-2xl font-bold mb-2">Nenhum item encontrado</h3>
+                <p class="text-xs text-country-600 dark:text-country-300 mb-5">Tente remover filtros para encontrar peças disponíveis.</p>
+                <button onclick="app.resetCatalogFilters()" class="btn-gradient-country px-6 py-2.5 rounded-full text-xs font-semibold">
+                    Ver Todos os Produtos
+                </button>
+            </div>
+        </div>
+
+        <!-- VIEW 3: DETALHES DO PRODUTO -->
+        <div id="view-product" class="hidden animate-view max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div id="productDetailContainer"></div>
+        </div>
+
+        <!-- VIEW 4: PAINEL ADMINISTRATIVO (100% OCULTO DO PÚBLICO) -->
+        <div id="view-admin" class="hidden animate-view max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="glass-panel rounded-3xl overflow-hidden shadow-2xl border border-country-400/30">
+                <div class="bg-country-900 text-country-50 px-6 py-5 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2.5 rounded-xl bg-country-500 text-white">
+                            <i class="ph-fill ph-shield-star text-2xl"></i>
+                        </div>
+                        <div>
+                            <h1 class="font-serif text-xl sm:text-2xl font-bold">Painel do Proprietário — Estância Imperial</h1>
+                            <p class="text-xs text-country-300">Gerenciamento exclusivo da loja e sincronização em nuvem</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="app.openAdminProductModal()" class="btn-gradient-country px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5">
+                            <i class="ph-bold ph-plus"></i> Novo Produto
+                        </button>
+                        <button onclick="app.navigate('home')" class="btn-acrylic px-4 py-2 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-1.5">
+                            <i class="ph ph-storefront"></i> Voltar à Loja
+                        </button>
+                    </div>
+                </div>
+
+                <div class="border-b border-country-200 dark:border-country-800 px-6 flex gap-6 overflow-x-auto text-xs sm:text-sm font-semibold">
+                    <button onclick="app.switchAdminTab('products')" id="adminTab-products" class="py-3.5 border-b-2 border-country-500 text-country-600 dark:text-country-400 whitespace-nowrap">
+                        Produtos & Estoque
+                    </button>
+                    <button onclick="app.switchAdminTab('orders')" id="adminTab-orders" class="py-3.5 border-b-2 border-transparent text-country-500 whitespace-nowrap">
+                        Pedidos Realizados
+                    </button>
+                    <button onclick="app.switchAdminTab('security')" id="adminTab-security" class="py-3.5 border-b-2 border-transparent text-country-500 whitespace-nowrap flex items-center gap-1.5">
+                        <i class="ph-fill ph-key"></i> Segurança & Administradores
+                    </button>
+                </div>
+
+                <div class="p-6">
+                    <div id="adminKpiGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"></div>
+
+                    <!-- ABA 1: PRODUTOS -->
+                    <div id="adminSection-products">
+                        <div class="overflow-x-auto rounded-2xl border border-country-200 dark:border-country-800">
+                            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                                <thead>
+                                    <tr class="bg-country-100/80 dark:bg-country-900/70 text-country-600 dark:text-country-300 uppercase text-[11px] tracking-wider">
+                                        <th class="py-3 px-4">Produto</th>
+                                        <th class="py-3 px-4">SKU</th>
+                                        <th class="py-3 px-4">Categoria</th>
+                                        <th class="py-3 px-4">Preço</th>
+                                        <th class="py-3 px-4">Estoque</th>
+                                        <th class="py-3 px-4 text-right">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminProductsTableBody" class="divide-y divide-country-200/60 dark:divide-country-800"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ABA 2: PEDIDOS -->
+                    <div id="adminSection-orders" class="hidden">
+                        <div id="adminOrdersListContainer"></div>
+                    </div>
+
+                    <!-- ABA 3: SEGURANÇA E ADMINS -->
+                    <div id="adminSection-security" class="hidden space-y-8">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Trocar Senha -->
+                            <div class="p-6 rounded-2xl border border-country-300/60 dark:border-country-800 space-y-4">
+                                <h3 class="font-serif text-lg font-bold">Alterar Minha Senha</h3>
+                                <form onsubmit="app.handleChangeAdminPassword(event)" class="space-y-3 text-xs sm:text-sm">
+                                    <div>
+                                        <label class="block font-semibold mb-1">Senha Atual *</label>
+                                        <input type="password" name="currentPassword" required class="w-full px-3.5 py-2.5 rounded-xl border border-country-300 dark:border-country-700 bg-transparent">
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold mb-1">Nova Senha *</label>
+                                        <input type="password" name="newPassword" required minlength="6" class="w-full px-3.5 py-2.5 rounded-xl border border-country-300 dark:border-country-700 bg-transparent">
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold mb-1">Confirmar Nova Senha *</label>
+                                        <input type="password" name="confirmPassword" required minlength="6" class="w-full px-3.5 py-2.5 rounded-xl border border-country-300 dark:border-country-700 bg-transparent">
+                                    </div>
+                                    <button type="submit" class="btn-gradient-country px-6 py-2.5 rounded-xl text-xs sm:text-sm font-semibold">
+                                        Atualizar Minha Senha
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Adicionar Novos Admins -->
+                            <div class="p-6 rounded-2xl border border-country-300/60 dark:border-country-800 space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="font-serif text-lg font-bold">Gerenciar Administradores</h3>
+                                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-country-500 text-white">Dono Master</span>
+                                </div>
+                                <form id="addAdminForm" onsubmit="app.handleAddAdminAccount(event)" class="space-y-3 text-xs sm:text-sm">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block font-semibold mb-1">Nome *</label>
+                                            <input type="text" name="adminName" required class="w-full px-3 py-2 rounded-xl border border-country-300 dark:border-country-700 bg-transparent">
+                                        </div>
+                                        <div>
+                                            <label class="block font-semibold mb-1">E-mail *</label>
+                                            <input type="email" name="adminEmail" required class="w-full px-3 py-2 rounded-xl border border-country-300 dark:border-country-700 bg-transparent">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold mb-1">Senha Inicial *</label>
+                                        <input type="password" name="adminPassword" required minlength="6" class="w-full px-3 py-2 rounded-xl border border-country-300 dark:border-country-700 bg-transparent">
+                                    </div>
+                                    <button type="submit" class="btn-acrylic-surface px-5 py-2.5 rounded-xl text-xs font-semibold">
+                                        Cadastrar Novo Administrador
+                                    </button>
+                                </form>
+                                <div id="adminAccountsListContainer" class="pt-4 border-t border-country-300/40 dark:border-country-800 space-y-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- RODAPÉ -->
+    <footer class="glass-panel border-t border-country-300/60 dark:border-country-800/80 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-country-500">
+            <div>
+                <span class="western-display-logo text-xl text-country-800 dark:text-country-100 block"><span class="western-drop-initial">E</span>stância Imperial</span>
+                <p class="mt-1">Western Store Oficial • Todos os direitos reservados © <span id="currentYearFooter"></span></p>
+            </div>
+            <div class="flex items-center gap-4">
+                <span>Ambiente Seguro SSL</span>
+                <span>•</span>
+                <span>Adequado à LGPD</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SACOLA DE COMPRAS -->
+    <div id="cartDrawerOverlay" class="fixed inset-0 z-50 hidden">
+        <div onclick="app.closeCartDrawer()" class="fixed inset-0 bg-black/60 backdrop-blur-xs"></div>
+        <aside class="fixed top-0 right-0 bottom-0 w-full max-w-md glass-panel z-10 flex flex-col justify-between shadow-2xl">
+            <div class="p-5 border-b border-country-300/50 dark:border-country-800 flex items-center justify-between">
+                <h2 class="font-serif text-xl font-bold">Sua Sacola Country</h2>
+                <button onclick="app.closeCartDrawer()" class="p-2 rounded-full hover:bg-country-200/50"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <div id="cartItemsContainer" class="flex-grow overflow-y-auto p-5 space-y-4"></div>
+            <div id="cartFooterSection" class="p-5 border-t border-country-300/50 dark:border-country-800 bg-country-100/60 dark:bg-country-900/60 space-y-4">
+                <div class="flex justify-between text-base font-bold">
+                    <span>Total do Pedido</span>
+                    <span id="cartTotalValue" class="font-serif text-lg text-country-600 dark:text-country-400">R$ 0,00</span>
+                </div>
+                <button onclick="app.openCheckoutModal()" class="w-full py-3.5 rounded-full btn-gradient-country font-semibold text-sm">
+                    Finalizar Compra
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- FAVORITOS -->
+    <div id="wishlistDrawerOverlay" class="fixed inset-0 z-50 hidden">
+        <div onclick="app.closeWishlistDrawer()" class="fixed inset-0 bg-black/60 backdrop-blur-xs"></div>
+        <aside class="fixed top-0 right-0 bottom-0 w-full max-w-md glass-panel z-10 flex flex-col justify-between shadow-2xl">
+            <div class="p-5 border-b border-country-300/50 dark:border-country-800 flex items-center justify-between">
+                <h2 class="font-serif text-xl font-bold">Peças Favoritas</h2>
+                <button onclick="app.closeWishlistDrawer()"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <div id="wishlistItemsContainer" class="flex-grow overflow-y-auto p-5 space-y-4"></div>
+        </aside>
+    </div>
+
+    <!-- PESQUISA GLOBAL -->
+    <div id="searchModalOverlay" class="fixed inset-0 z-50 hidden">
+        <div onclick="app.closeSearchModal()" class="fixed inset-0 bg-black/65 backdrop-blur-xs"></div>
+        <div class="relative z-10 max-w-2xl mx-auto mt-20 px-4">
+            <div class="glass-panel rounded-3xl p-6 shadow-2xl border border-country-400/40">
+                <div class="relative">
+                    <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-xl text-country-500"></i>
+                    <input type="search" id="globalSearchInput" oninput="app.handleGlobalSearchInput(this.value)" placeholder="Busque por 'Bota', 'Chapéu 20X', 'Camisa'..." class="w-full pl-12 pr-4 py-3 rounded-2xl border border-country-300 dark:border-country-700 bg-white/70 dark:bg-country-900/70 text-sm focus:outline-none">
+                </div>
+                <div id="globalSearchResults" class="mt-4 max-h-80 overflow-y-auto divide-y divide-country-200/50 dark:divide-country-800"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUTENTICAÇÃO / LOGIN -->
+    <div id="authModalOverlay" class="fixed inset-0 z-50 hidden">
+        <div onclick="app.closeAuthModal()" class="fixed inset-0 bg-black/65 backdrop-blur-xs"></div>
+        <div class="relative z-10 max-w-md mx-auto mt-16 px-4">
+            <div class="glass-panel rounded-3xl p-6 sm:p-8 shadow-2xl">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 id="authModalTitle" class="font-serif text-2xl font-bold">Minha Conta</h3>
+                    <button onclick="app.closeAuthModal()"><i class="ph ph-x text-lg"></i></button>
+                </div>
+                <div id="authModalBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GENÉRICO -->
+    <div id="infoModalOverlay" class="fixed inset-0 z-50 hidden overflow-y-auto py-8">
+        <div onclick="app.closeInfoModal()" class="fixed inset-0 bg-black/65 backdrop-blur-xs"></div>
+        <div class="relative z-10 max-w-2xl mx-auto px-4 my-auto">
+            <div class="glass-panel rounded-3xl p-6 sm:p-8 shadow-2xl border border-country-400/30">
+                <div class="flex items-center justify-between pb-4 mb-5 border-b border-country-300/50 dark:border-country-800">
+                    <h3 id="infoModalTitle" class="font-serif text-2xl font-bold">Informações</h3>
+                    <button onclick="app.closeInfoModal()"><i class="ph ph-x text-lg"></i></button>
+                </div>
+                <div id="infoModalContent" class="text-xs sm:text-sm space-y-4 max-h-[75vh] overflow-y-auto pr-1"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHATBOX -->
+    <div class="fixed bottom-5 right-5 z-40 flex flex-col items-end">
+        <div id="supportChatWindow" class="hidden w-80 sm:w-96 mb-3 glass-panel rounded-3xl shadow-2xl overflow-hidden border border-country-400/40 animate-view">
+            <div class="bg-country-900 text-white px-5 py-4 flex items-center justify-between">
+                <h4 class="font-serif font-bold text-sm">Central de Ajuda Country</h4>
+                <button onclick="app.toggleChatbox(false)"><i class="ph ph-x"></i></button>
+            </div>
+            <div id="chatMessagesContainer" class="p-4 h-64 overflow-y-auto space-y-3 text-xs">
+                <div class="bg-country-200/60 dark:bg-country-800/80 p-3 rounded-2xl">
+                    Olá! Como podemos ajudar você com medidas, couro legítimo ou seu pedido?
+                </div>
+            </div>
+            <form onsubmit="app.handleChatSubmit(event)" class="p-3 border-t border-country-300/40 dark:border-country-800 flex gap-2">
+                <input type="text" id="chatInputField" placeholder="Digite sua dúvida..." class="flex-grow px-3.5 py-2 rounded-full text-xs border border-country-300 dark:border-country-700 bg-transparent focus:outline-none">
+                <button type="submit" class="p-2 px-3 rounded-full btn-gradient-country text-xs"><i class="ph-bold ph-paper-plane-right"></i></button>
+            </form>
+        </div>
+        <button onclick="app.toggleChatbox()" class="btn-gradient-country p-4 rounded-full shadow-2xl flex items-center gap-2">
+            <i class="ph-fill ph-chat-teardrop-text text-2xl"></i>
+            <span class="text-xs font-semibold hidden sm:inline">Ajuda</span>
+        </button>
+    </div>
+
+    <div id="toastContainer" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none w-max max-w-[90vw]"></div>
+
+    <!-- SCRIPT DA APLICAÇÃO -->
+    <script>
+        const DEFAULT_HERO_PANELS = [
+            {
+                id: 'panel-1',
+                verticalLabel: 'JAQUETAS & COURO',
+                subtitle: 'COURO BOVINO & CAMURÇA',
+                title: 'Estância Leather',
+                description: 'Casacos e jaquetas em couro e camurça marrom tabaco com corte anatômico para o campo e rodeio.',
+                categoryFilter: 'Jaquetas & Couro',
+                image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=1200&q=85'
+            },
+            {
+                id: 'panel-2',
+                verticalLabel: 'CAMISARIA SERTANEJA',
+                subtitle: 'ALGODÃO & FLANELA WESTERN',
+                title: 'Camisaria Imperial',
+                description: 'Camisas button-up de toque aveludado em tons terrosos e botões de madrepérola.',
+                categoryFilter: 'Camisaria',
+                image: 'https://images.unsplash.com/photo-1516826957135-700dedea698c?auto=format&fit=crop&w=1200&q=85'
+            },
+            {
+                id: 'panel-3',
+                verticalLabel: 'BOTAS TEXANAS',
+                subtitle: 'COSTURA GOODYEAR WELT',
+                title: 'Texanas Artesanais',
+                description: 'Feitas à mão em couro legítimo pinhão e café tabaco com conforto absoluto para o dia a dia.',
+                categoryFilter: 'Botas Texanas',
+                image: 'https://images.unsplash.com/photo-1520639888713-7851133b1ed0?auto=format&fit=crop&w=1200&q=85'
+            },
+            {
+                id: 'panel-4',
+                verticalLabel: 'CHAPÉUS & FELTROS',
+                subtitle: 'COLEÇÃO PREMIUM 20X',
+                title: 'Estância Imperial Hats',
+                description: 'Chapéus western em feltro aveludado marrom tabaco e palha bangora com banda em couro.',
+                categoryFilter: 'Chapéus & Feltros',
+                image: 'https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?auto=format&fit=crop&w=1200&q=85'
+            }
+        ];
+
+        const DEFAULT_PRODUCTS = [
+            {
+                id: 'prod-1',
+                sku: 'EI-K47589',
+                name: 'Camisa Velvet Touch Button-Up Couro Camurça',
+                category: 'Camisaria',
+                price: 489.90,
+                rating: 5.0,
+                reviewsCount: 42,
+                stock: 18,
+                colors: ['Couro Pinhão', 'Café Tabaco', 'Preto Ônix'],
+                sizes: ['P', 'M', 'G', 'GG'],
+                badge: 'Best Seller Editorial',
+                image: 'https://images.unsplash.com/photo-1516826957135-700dedea698c?auto=format&fit=crop&w=1000&q=85',
+                gallery: [
+                    'https://images.unsplash.com/photo-1516826957135-700dedea698c?auto=format&fit=crop&w=1000&q=85',
+                    'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=900&q=80'
+                ],
+                description: 'Camisa aveludada em tons de camurça marrom com lapela dupla e caimento estruturado estilo country.',
+                materials: '100% Algodão Peletizado de alta gramatura com toque camurça.'
+            },
+            {
+                id: 'prod-2',
+                sku: 'EI-BT9021',
+                name: 'Bota Texana Imperial Bico Quadrado Couro Pinhão',
+                category: 'Botas Texanas',
+                price: 1190.00,
+                rating: 4.9,
+                reviewsCount: 67,
+                stock: 12,
+                colors: ['Couro Pinhão', 'Café Tabaco'],
+                sizes: ['38', '39', '40', '41', '42', '43', '44'],
+                badge: 'Artesanal Goodyear',
+                image: 'https://images.unsplash.com/photo-1520639888713-7851133b1ed0?auto=format&fit=crop&w=1000&q=85',
+                gallery: [
+                    'https://images.unsplash.com/photo-1520639888713-7851133b1ed0?auto=format&fit=crop&w=1000&q=85',
+                    'https://images.unsplash.com/photo-1608256246200-53e635b5b65f?auto=format&fit=crop&w=900&q=80'
+                ],
+                description: 'Bota texana legítima confeccionada em couro bovino selecionado com cano bordado e palmilha de gel.',
+                materials: 'Couro Bovino Floater legítimo e forro interno macio.'
+            },
+            {
+                id: 'prod-3',
+                sku: 'EI-CH2004',
+                name: 'Chapéu Cowboy Feltro 20X Aba 11cm Café Tabaco',
+                category: 'Chapéus & Feltros',
+                price: 849.00,
+                rating: 5.0,
+                reviewsCount: 38,
+                stock: 9,
+                colors: ['Café Tabaco', 'Preto Ônix'],
+                sizes: ['55 (P)', '57 (M)', '59 (G)', '61 (GG)'],
+                badge: 'Feltro Nobre 20X',
+                image: 'https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?auto=format&fit=crop&w=1000&q=85',
+                gallery: [
+                    'https://images.unsplash.com/photo-1514327605112-b887c0e61c0a?auto=format&fit=crop&w=1000&q=85',
+                    'https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&w=900&q=80'
+                ],
+                description: 'Copa clássica Cattleman com feltro de alta densidade e banda em couro trançado.',
+                materials: 'Feltro 20X impermeabilizado naturalmente e carneira interna de couro.'
+            },
+            {
+                id: 'prod-4',
+                sku: 'EI-JQ3310',
+                name: 'Jaqueta Western Rancher em Couro Camurça Tabaco',
+                category: 'Jaquetas & Couro',
+                price: 1590.00,
+                rating: 4.9,
+                reviewsCount: 29,
+                stock: 7,
+                colors: ['Couro Pinhão', 'Café Tabaco'],
+                sizes: ['P', 'M', 'G', 'GG'],
+                badge: 'Edição Numerada',
+                image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=1000&q=85',
+                gallery: [
+                    'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=1000&q=85'
+                ],
+                description: 'Jaqueta robusta em camurça rústica com acabamentos reforçados e forração térmica.',
+                materials: '100% Couro Bovino Camurça com forro acetinado.'
+            }
+        ];
+
+        const app = {
+            supabase: null,
+            state: {
+                currentView: 'home',
+                activeHeroIndex: 3,
+                highlightIndex: 0,
+                products: [],
+                cart: [],
+                wishlist: [],
+                orders: [],
+                admins: [],
+                customers: [],
+                user: null,
+                catalogFilter: {
+                    category: 'Todos',
+                    search: '',
+                    sort: 'featured',
+                    maxPrice: 2500,
+                    color: 'Todas'
+                },
+                selectedProductDetail: {
+                    productId: 'prod-1',
+                    selectedSize: 'M',
+                    selectedColor: 'Couro Pinhão',
+                    activeImageIndex: 0
+                }
+            },
+
+            init() {
+                // Tema
+                if (localStorage.getItem('ei_theme') === 'dark') {
+                    document.body.classList.add('dark');
+                    document.documentElement.classList.add('dark');
+                }
+                this.updateThemeIcon();
+
+                // Administrador Master permanente
+                const MASTER_EMAIL = 'thauanmarques095@gmail.com';
+                const savedAdmins = localStorage.getItem('ei_admins_v1');
+                if (savedAdmins) {
+                    this.state.admins = JSON.parse(savedAdmins);
+                    if (!this.state.admins.some(a => a.email.toLowerCase() === MASTER_EMAIL)) {
+                        this.state.admins.unshift({
+                            id: 'admin-master',
+                            name: 'Thauan Marques (Proprietário)',
+                            email: MASTER_EMAIL,
+                            password: '975613',
+                            isOwner: true
+                        });
+                        localStorage.setItem('ei_admins_v1', JSON.stringify(this.state.admins));
+                    }
+                } else {
+                    this.state.admins = [{
+                        id: 'admin-master',
+                        name: 'Thauan Marques (Proprietário)',
+                        email: MASTER_EMAIL,
+                        password: '975613',
+                        isOwner: true
+                    }];
+                    localStorage.setItem('ei_admins_v1', JSON.stringify(this.state.admins));
+                }
+
+                // Clientes cadastrados
+                const savedCustomers = localStorage.getItem('ei_customers_v1');
+                this.state.customers = savedCustomers ? JSON.parse(savedCustomers) : [];
+
+                // Produtos
+                const savedProducts = localStorage.getItem('ei_products_v3');
+                this.state.products = savedProducts ? JSON.parse(savedProducts) : [...DEFAULT_PRODUCTS];
+
+                // Sacola e Favoritos
+                const savedCart = localStorage.getItem('ei_cart');
+                this.state.cart = savedCart ? JSON.parse(savedCart) : [];
+
+                const savedWishlist = localStorage.getItem('ei_wishlist');
+                this.state.wishlist = savedWishlist ? JSON.parse(savedWishlist) : ['prod-1'];
+
+                const savedOrders = localStorage.getItem('ei_orders');
+                this.state.orders = savedOrders ? JSON.parse(savedOrders) : [];
+
+                // Sessão salva
+                const savedUser = localStorage.getItem('ei_user') || sessionStorage.getItem('ei_user');
+                if (savedUser) {
+                    const parsed = JSON.parse(savedUser);
+                    if (parsed.role === 'owner' || parsed.role === 'admin') {
+                        const adm = this.state.admins.find(a => a.email.toLowerCase() === parsed.email.toLowerCase());
+                        if (adm) this.state.user = { name: adm.name, email: adm.email, role: adm.isOwner ? 'owner' : 'admin' };
+                    } else {
+                        const cust = this.state.customers.find(c => c.email.toLowerCase() === (parsed.email || '').toLowerCase());
+                        if (cust) this.state.user = { name: cust.name, email: cust.email, role: 'cliente' };
+                    }
+                }
+
+                document.getElementById('currentYearFooter').textContent = new Date().getFullYear();
+
+                this.renderHeroAccordion();
+                this.renderHomeBestSellers();
+                this.renderEditorialHighlights();
+                this.updateHeaderCounters();
+                this.updateUserHeaderUI();
+
+                // Supabase inicialização
+                this.initSupabase();
+            },
+
+            initSupabase() {
+                try {
+                    const sbUrl = 'https://oionrnnkwsxaivmickxz.supabase.co';
+                    const sbKey = 'sb_publishable_npqH8IW_JFI5JomKxt8VpQ_tBGB1vK6';
+                    if (window.supabase) {
+                        this.supabase = window.supabase.createClient(sbUrl, sbKey);
+                    }
+                } catch (e) {
+                    console.log('Supabase carregado localmente');
+                }
+            },
+
+            navigate(viewName) {
+                if (viewName === 'admin') {
+                    if (!this.state.user || (this.state.user.role !== 'admin' && this.state.user.role !== 'owner')) {
+                        this.showToast('Acesso restrito. Faça login.', 'error');
+                        this.openAuthModal();
+                        return;
+                    }
+                    this.renderAdminDashboard();
+                }
+
+                this.state.currentView = viewName;
+                ['home', 'catalog', 'product', 'admin'].forEach(v => {
+                    const el = document.getElementById(`view-${v}`);
+                    if (el) el.classList.toggle('hidden', v !== viewName);
+                });
+
+                if (viewName === 'catalog') this.renderCatalogView();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            },
+
+            toggleTheme() {
+                const isDark = document.body.classList.toggle('dark');
+                document.documentElement.classList.toggle('dark', isDark);
+                localStorage.setItem('ei_theme', isDark ? 'dark' : 'light');
+                this.updateThemeIcon();
+            },
+
+            updateThemeIcon() {
+                const icon = document.getElementById('themeIcon');
+                if (!icon) return;
+                const isDark = document.body.classList.contains('dark');
+                icon.className = isDark ? 'ph-fill ph-sun text-lg text-amber-400' : 'ph ph-moon text-lg';
+            },
+
+            toggleMobileMenu() {
+                document.getElementById('mobileMenuOverlay')?.classList.toggle('hidden');
+            },
+
+            /* Hero Accordion com animação 0.95s */
+            renderHeroAccordion() {
+                const container = document.getElementById('heroAccordionContainer');
+                if (!container) return;
+
+                container.innerHTML = DEFAULT_HERO_PANELS.map((panel, index) => {
+                    const isActive = index === this.state.activeHeroIndex;
+                    return `
+                        <article 
+                            onmouseenter="app.setActiveHeroPanel(${index})"
+                            onclick="app.setActiveHeroPanel(${index})"
+                            class="hero-panel ${isActive ? 'active' : ''} group"
+                            role="button"
+                        >
+                            <img src="${panel.image}" alt="${panel.title}" class="hero-bg-img western-warm-img absolute inset-0 w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/15"></div>
+
+                            <div class="hero-vertical-wrap">
+                                <span class="hero-vertical-label text-white font-bold text-xs sm:text-sm tracking-[0.25em] uppercase">
+                                    ${panel.verticalLabel}
+                                </span>
+                            </div>
+
+                            <div class="hero-content-stage">
+                                <div class="hero-content-inner text-white">
+                                    <span class="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-[0.22em] uppercase btn-acrylic mb-3">
+                                        ${panel.subtitle}
+                                    </span>
+                                    <h2 class="font-serif text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-2">
+                                        ${panel.title}
+                                    </h2>
+                                    <p class="text-xs sm:text-sm text-country-100/90 max-w-md mx-auto mb-5 leading-relaxed">
+                                        ${panel.description}
+                                    </p>
+                                    <div class="flex items-center justify-center gap-3">
+                                        <button onclick="event.stopPropagation(); app.filterByCategoryAndGo('${panel.categoryFilter}')" class="btn-gradient-country px-6 py-2.5 rounded-full text-xs sm:text-sm font-semibold">
+                                            Explorar Coleção
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    `;
+                }).join('');
+            },
+
+            setActiveHeroPanel(index) {
+                if (this.state.activeHeroIndex === index) return;
+                this.state.activeHeroIndex = index;
+                const container = document.getElementById('heroAccordionContainer');
+                if (!container) return;
+                container.querySelectorAll('.hero-panel').forEach((el, idx) => {
+                    el.classList.toggle('active', idx === index);
+                });
+            },
+
+            renderHomeBestSellers() {
+                const grid = document.getElementById('homeBestSellersGrid');
+                if (!grid) return;
+                grid.innerHTML = this.state.products.slice(0, 4).map(p => this.createProductCardHTML(p)).join('');
+            },
+
+            createProductCardHTML(prod) {
+                const isFav = this.state.wishlist.includes(prod.id);
+                return `
+                    <article class="glass-panel rounded-3xl overflow-hidden group flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl">
+                        <div>
+                            <div class="relative aspect-[4/5] overflow-hidden bg-country-200/40 dark:bg-country-900/50 cursor-pointer" onclick="app.openProductDetail('${prod.id}')">
+                                <img src="${prod.image}" alt="${prod.name}" class="western-warm-img w-full h-full object-cover group-hover:scale-105">
+                                <span class="absolute top-3 left-3 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-country-900/80 text-white backdrop-blur-md">
+                                    ${prod.badge || prod.category}
+                                </span>
+                                <button onclick="event.stopPropagation(); app.toggleWishlist('${prod.id}')" class="absolute top-3 right-3 w-9 h-9 rounded-full btn-acrylic flex items-center justify-center text-white">
+                                    <i class="${isFav ? 'ph-fill text-rose-400' : 'ph'} ph-heart text-lg"></i>
+                                </button>
+                            </div>
+                            <div class="p-5">
+                                <div class="flex items-center justify-between text-[11px] text-country-500 mb-1">
+                                    <span class="uppercase tracking-wider font-semibold">${prod.category}</span>
+                                    <span class="flex items-center gap-1 text-amber-500 font-bold"><i class="ph-fill ph-star"></i> ${Number(prod.rating).toFixed(1)}</span>
+                                </div>
+                                <h3 onclick="app.openProductDetail('${prod.id}')" class="font-serif text-base sm:text-lg font-bold cursor-pointer hover:text-country-500 line-clamp-2">
+                                    ${prod.name}
+                                </h3>
+                                <p class="text-[11px] text-country-500 mt-1">SKU: ${prod.sku}</p>
+                            </div>
+                        </div>
+                        <div class="px-5 pb-5 pt-2 flex items-center justify-between border-t border-country-200/50 dark:border-country-800/60">
+                            <div>
+                                <span class="text-xs text-country-500 block">Valor à vista</span>
+                                <span class="font-serif text-lg font-bold">${this.formatCurrency(prod.price)}</span>
+                            </div>
+                            <button onclick="app.quickAddToCart('${prod.id}')" class="btn-gradient-country px-4 py-2.5 rounded-2xl text-xs font-semibold">
+                                + Sacola
+                            </button>
+                        </div>
+                    </article>
+                `;
+            },
+
+            renderEditorialHighlights() {
+                const container = document.getElementById('editorialHighlightsContainer');
+                if (!container || this.state.products.length === 0) return;
+                const p = this.state.products[0];
+                const thumbs = p.gallery && p.gallery.length ? p.gallery : [p.image];
+
+                container.innerHTML = `
+                    <div class="lg:col-span-6 rounded-2xl overflow-hidden relative min-h-[340px] cursor-pointer" onclick="app.openProductDetail('${p.id}')">
+                        <img id="highlightMainZoomImg" src="${p.image}" alt="${p.name}" class="western-warm-img w-full h-full object-cover">
+                    </div>
+                    <div class="lg:col-span-6 bg-country-100/70 dark:bg-country-900/60 rounded-2xl p-6 flex flex-col justify-between border border-country-300/40 dark:border-country-800">
+                        <div>
+                            <span class="text-[11px] font-bold uppercase tracking-widest text-country-500">ESTÂNCIA: ${p.sku}</span>
+                            <h3 onclick="app.openProductDetail('${p.id}')" class="font-serif text-2xl font-bold mt-1 cursor-pointer hover:text-country-500">${p.name}</h3>
+                            <p class="font-serif text-xl font-bold text-country-600 dark:text-country-400 mt-2">${this.formatCurrency(p.price)}</p>
+                            <p class="text-xs text-country-600 dark:text-country-300 mt-3 leading-relaxed">${p.description}</p>
+                        </div>
+                        <div class="my-6">
+                            <p class="text-[11px] font-semibold uppercase text-country-500 mb-2">Ângulos da Peça:</p>
+                            <div class="flex gap-2">
+                                ${thumbs.map(img => `
+                                    <button onclick="document.getElementById('highlightMainZoomImg').src='${img}'" class="w-16 h-16 rounded-xl overflow-hidden border border-country-300">
+                                        <img src="${img}" class="w-full h-full object-cover">
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <button onclick="app.openProductDetail('${p.id}')" class="btn-gradient-country px-5 py-2.5 rounded-full text-xs font-semibold self-start">
+                            Ver Peça Completa
+                        </button>
+                    </div>
+                `;
+            },
+
+            filterByCategoryAndGo(cat) {
+                this.state.catalogFilter.category = cat;
+                this.navigate('catalog');
+            },
+
+            renderCatalogView() {
+                const categories = ['Todos', 'Botas Texanas', 'Chapéus & Feltros', 'Camisaria', 'Jaquetas & Couro'];
+                const pills = document.getElementById('catalogCategoryPills');
+                if (pills) {
+                    pills.innerHTML = categories.map(cat => `
+                        <button onclick="app.filterByCategoryAndGo('${cat}')" class="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold shrink-0 ${this.state.catalogFilter.category === cat ? 'btn-gradient-country' : 'btn-acrylic-surface'}">
+                            ${cat}
+                        </button>
+                    `).join('');
+                }
+
+                const filtered = this.state.products.filter(p => {
+                    const matchCat = this.state.catalogFilter.category === 'Todos' || p.category === this.state.catalogFilter.category;
+                    const q = this.state.catalogFilter.search.trim().toLowerCase();
+                    const matchQ = !q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q);
+                    const matchP = p.price <= this.state.catalogFilter.maxPrice;
+                    const matchC = this.state.catalogFilter.color === 'Todas' || p.colors.includes(this.state.catalogFilter.color);
+                    return matchCat && matchQ && matchP && matchC;
+                });
+
+                document.getElementById('catalogProductCounter').textContent = `Exibindo ${filtered.length} produtos`;
+                const grid = document.getElementById('catalogProductsGrid');
+                const empty = document.getElementById('catalogEmptyState');
+                if (filtered.length === 0) {
+                    grid.innerHTML = '';
+                    empty.classList.remove('hidden');
+                } else {
+                    empty.classList.add('hidden');
+                    grid.innerHTML = filtered.map(p => this.createProductCardHTML(p)).join('');
+                }
+            },
+
+            handleInlineCatalogSearch(val) {
+                this.state.catalogFilter.search = val;
+                this.renderCatalogView();
+            },
+
+            handleSortChange(val) {
+                if (val === 'price-asc') this.state.products.sort((a,b) => a.price - b.price);
+                if (val === 'price-desc') this.state.products.sort((a,b) => b.price - a.price);
+                if (val === 'name') this.state.products.sort((a,b) => a.name.localeCompare(b.name));
+                this.renderCatalogView();
+            },
+
+            toggleAdvancedFilters() {
+                document.getElementById('advancedFiltersDrawer')?.classList.toggle('hidden');
+            },
+
+            handlePriceFilterChange(val) {
+                this.state.catalogFilter.maxPrice = Number(val);
+                document.getElementById('priceRangeLabel').textContent = `Até ${this.formatCurrency(val)}`;
+                this.renderCatalogView();
+            },
+
+            handleColorFilter(c) {
+                this.state.catalogFilter.color = c;
+                this.renderCatalogView();
+            },
+
+            resetCatalogFilters() {
+                this.state.catalogFilter = { category: 'Todos', search: '', sort: 'featured', maxPrice: 2500, color: 'Todas' };
+                this.renderCatalogView();
+            },
+
+            openProductDetail(id) {
+                const prod = this.state.products.find(p => p.id === id);
+                if (!prod) return;
+                this.state.selectedProductDetail = {
+                    productId: prod.id,
+                    selectedSize: prod.sizes[0] || 'M',
+                    selectedColor: prod.colors[0] || 'Couro Pinhão',
+                    activeImageIndex: 0
+                };
+                this.renderProductDetailView();
+                this.navigate('product');
+            },
+
+            renderProductDetailView() {
+                const container = document.getElementById('productDetailContainer');
+                const d = this.state.selectedProductDetail;
+                const prod = this.state.products.find(p => p.id === d.productId);
+                if (!container || !prod) return;
+
+                const gallery = prod.gallery && prod.gallery.length ? prod.gallery : [prod.image];
+
+                container.innerHTML = `
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        <div class="lg:col-span-7 space-y-4">
+                            <div class="aspect-square rounded-3xl overflow-hidden glass-panel">
+                                <img src="${gallery[d.activeImageIndex] || prod.image}" class="western-warm-img w-full h-full object-cover">
+                            </div>
+                            <div class="flex gap-3">
+                                ${gallery.map((img, i) => `
+                                    <button onclick="app.setProductDetailImage(${i})" class="w-20 h-20 rounded-xl overflow-hidden border-2 ${i === d.activeImageIndex ? 'border-country-500' : 'border-transparent'}">
+                                        <img src="${img}" class="w-full h-full object-cover">
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-5 space-y-6">
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-widest text-country-500">SKU: ${prod.sku}</span>
+                                <h1 class="font-serif text-3xl font-bold mt-1">${prod.name}</h1>
+                                <p class="font-serif text-3xl font-bold text-country-800 dark:text-country-100 mt-4">${this.formatCurrency(prod.price)}</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase mb-2">Tamanho</label>
+                                <div class="flex gap-2">
+                                    ${prod.sizes.map(s => `
+                                        <button onclick="app.selectProductSize('${s}')" class="min-w-[44px] h-10 px-3 rounded-full text-xs font-bold ${s === d.selectedSize ? 'bg-country-900 text-white dark:bg-white dark:text-country-950' : 'glass-panel'}">
+                                            ${s}
+                                        </button>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            <div class="space-y-3">
+                                <button onclick="app.quickAddToCart('${prod.id}')" class="w-full py-4 rounded-2xl btn-gradient-country font-bold text-sm uppercase">
+                                    Adicionar à Sacola
+                                </button>
+                            </div>
+
+                            <div class="border-t border-country-300 dark:border-country-800 pt-4 text-xs space-y-2">
+                                <p><strong>Descrição:</strong> ${prod.description}</p>
+                                <p><strong>Materiais:</strong> ${prod.materials}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            setProductDetailImage(idx) {
+                this.state.selectedProductDetail.activeImageIndex = idx;
+                this.renderProductDetailView();
+            },
+
+            selectProductSize(sz) {
+                this.state.selectedProductDetail.selectedSize = sz;
+                this.renderProductDetailView();
+            },
+
+            quickAddToCart(id) {
+                const p = this.state.products.find(x => x.id === id);
+                if (!p) return;
+                this.state.cart.push({ productId: p.id, size: p.sizes[0] || 'M', color: p.colors[0] || 'Couro Pinhão', quantity: 1 });
+                this.saveCart();
+                this.updateHeaderCounters();
+                this.showToast(`${p.name} adicionado à sacola!`, 'success');
+            },
+
+            saveCart() {
+                localStorage.setItem('ei_cart', JSON.stringify(this.state.cart));
+            },
+
+            openCartDrawer() {
+                const container = document.getElementById('cartItemsContainer');
+                if (this.state.cart.length === 0) {
+                    container.innerHTML = `<p class="text-center py-12 text-country-500 text-xs">Sua sacola está vazia.</p>`;
+                    document.getElementById('cartFooterSection').classList.add('hidden');
+                } else {
+                    document.getElementById('cartFooterSection').classList.remove('hidden');
+                    let tot = 0;
+                    container.innerHTML = this.state.cart.map((item, idx) => {
+                        const p = this.state.products.find(x => x.id === item.productId);
+                        if (!p) return '';
+                        tot += p.price * item.quantity;
+                        return `
+                            <div class="p-3 rounded-2xl glass-panel flex gap-3 items-center">
+                                <img src="${p.image}" class="w-16 h-20 rounded-xl object-cover">
+                                <div class="flex-grow">
+                                    <h4 class="font-serif font-bold text-xs truncate">${p.name}</h4>
+                                    <p class="text-[11px] text-country-500">${this.formatCurrency(p.price)}</p>
+                                    <button onclick="app.removeCartItem(${idx})" class="text-[11px] text-rose-500 underline mt-1">Remover</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    document.getElementById('cartTotalValue').textContent = this.formatCurrency(tot);
+                }
+                document.getElementById('cartDrawerOverlay').classList.remove('hidden');
+            },
+
+            closeCartDrawer() {
+                document.getElementById('cartDrawerOverlay').classList.add('hidden');
+            },
+
+            removeCartItem(idx) {
+                this.state.cart.splice(idx, 1);
+                this.saveCart();
+                this.updateHeaderCounters();
+                this.openCartDrawer();
+            },
+
+            toggleWishlist(id) {
+                const idx = this.state.wishlist.indexOf(id);
+                if (idx > -1) this.state.wishlist.splice(idx, 1);
+                else this.state.wishlist.push(id);
+                localStorage.setItem('ei_wishlist', JSON.stringify(this.state.wishlist));
+                this.updateHeaderCounters();
+                this.renderHomeBestSellers();
+            },
+
+            openWishlistDrawer() {
+                const container = document.getElementById('wishlistItemsContainer');
+                const favs = this.state.products.filter(p => this.state.wishlist.includes(p.id));
+                container.innerHTML = favs.length ? favs.map(p => `
+                    <div class="p-3 rounded-2xl glass-panel flex gap-3 items-center">
+                        <img src="${p.image}" class="w-16 h-20 rounded-xl object-cover">
+                        <div>
+                            <h4 class="font-serif font-bold text-xs">${p.name}</h4>
+                            <p class="font-serif text-xs font-bold">${this.formatCurrency(p.price)}</p>
+                        </div>
+                    </div>
+                `).join('') : '<p class="text-center py-10 text-xs text-country-500">Nenhum favorito salvo.</p>';
+                document.getElementById('wishlistDrawerOverlay').classList.remove('hidden');
+            },
+
+            closeWishlistDrawer() {
+                document.getElementById('wishlistDrawerOverlay').classList.add('hidden');
+            },
+
+            updateHeaderCounters() {
+                document.getElementById('cartCountBadge').textContent = this.state.cart.length;
+                const wb = document.getElementById('wishlistBadge');
+                wb.textContent = this.state.wishlist.length;
+                wb.classList.toggle('hidden', this.state.wishlist.length === 0);
+            },
+
+            openSearchModal() {
+                document.getElementById('searchModalOverlay').classList.remove('hidden');
+                document.getElementById('globalSearchInput').focus();
+            },
+
+            closeSearchModal() {
+                document.getElementById('searchModalOverlay').classList.add('hidden');
+            },
+
+            handleGlobalSearchInput(val) {
+                const res = document.getElementById('globalSearchResults');
+                const q = val.trim().toLowerCase();
+                if (!q) { res.innerHTML = ''; return; }
+                const matches = this.state.products.filter(p => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
+                res.innerHTML = matches.map(p => `
+                    <div onclick="app.closeSearchModal(); app.openProductDetail('${p.id}')" class="py-2 px-2 flex justify-between items-center cursor-pointer hover:bg-country-200/40 rounded-xl">
+                        <span class="font-semibold text-xs">${p.name}</span>
+                        <span class="font-serif font-bold text-xs">${this.formatCurrency(p.price)}</span>
+                    </div>
+                `).join('');
+            },
+
+            /* Validador dos 7 provedores de e-mail */
+            isAllowedEmailProvider(email) {
+                if (!email || !email.includes('@')) return false;
+                const domain = email.split('@')[1].toLowerCase().trim();
+                const allowed = [
+                    'gmail.com', 'googlemail.com',
+                    'outlook.com', 'outlook.com.br', 'hotmail.com', 'hotmail.com.br', 'live.com', 'msn.com',
+                    'yahoo.com', 'yahoo.com.br', 'ymail.com',
+                    'icloud.com', 'me.com', 'mac.com',
+                    'proton.me', 'protonmail.com', 'protonmail.ch', 'pm.me',
+                    'tuta.com', 'tuta.io', 'tutanota.com', 'tutanota.de', 'tutamail.com',
+                    'zohomail.com', 'zoho.com'
+                ];
+                return allowed.includes(domain);
+            },
+
+            handleUserIconClick() {
+                this.openAuthModal();
+            },
+
+            openAuthModal(mode = 'login') {
+                document.getElementById('authModalOverlay').classList.remove('hidden');
+                this.renderAuthModalContent(mode);
+            },
+
+            closeAuthModal() {
+                document.getElementById('authModalOverlay').classList.add('hidden');
+            },
+
+            renderAuthModalContent(mode) {
+                const body = document.getElementById('authModalBody');
+                const title = document.getElementById('authModalTitle');
+
+                if (this.state.user) {
+                    const isAdmin = this.state.user.role === 'admin' || this.state.user.role === 'owner';
+                    title.textContent = `Olá, ${this.state.user.name}`;
+                    body.innerHTML = `
+                        <div class="space-y-4 text-xs sm:text-sm">
+                            <p class="font-bold">${this.state.user.email}</p>
+                            ${isAdmin ? `
+                                <button onclick="app.closeAuthModal(); app.navigate('admin');" class="w-full py-3 rounded-xl btn-gradient-country font-semibold flex items-center justify-center gap-2">
+                                    <i class="ph-fill ph-shield-star"></i> Abrir Painel Administrativo
+                                </button>
+                            ` : ''}
+                            <button onclick="app.logoutUser()" class="w-full py-3 rounded-xl border border-rose-500/40 text-rose-500 font-semibold">
+                                Sair da Conta
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                if (mode === 'register') {
+                    title.textContent = 'Criar Cadastro';
+                    body.innerHTML = `
+                        <form onsubmit="app.handleRegisterSubmit(event)" class="space-y-3 text-xs sm:text-sm">
+                            <div id="regErr" class="hidden p-2.5 rounded-xl bg-rose-500/20 text-rose-600 text-xs font-semibold"></div>
+                            <div>
+                                <label class="block font-semibold mb-1">Nome Completo *</label>
+                                <input type="text" name="name" required class="w-full px-3 py-2 rounded-xl border border-country-300 dark:border-country-700 bg-transparent">
+                            </div>
+                            <div>
+                                <label class="block font-semibold mb-1">E-mail Oficial *</label>
+                                <input type="email" name="email" required placeholder="seu@gmail.com" class="w-full px-3 py-2 rounded-xl border border-country-300 dark:border-country-700 bg-transparent">
+                                <p class="text-[10px] text-country-500 mt-1">Aceitamos: Gmail, Outlook/Hotmail, Yahoo, iCloud, Proton, Tuta ou Zoho.</p>
+                            </div>
+                            <div>
+                                <label class="block font-semibold mb-1">Senha *</label>
+                                <input type="password" name="password" minlength="6" required class="w-full px-3 py-2 rounded-xl border border-country-300 dark:border-country-700 bg-transparent">
+                            </div>
+                            <button type="submit" class="w-full py-3 rounded-full btn-gradient-country font-semibold">Concluir Cadastro</button>
+                            <p class="text-center text-xs text-country-500">Já tem conta? <button type="button" onclick="app.renderAuthModalContent('login')" class="underline font-bold">Entrar</button></p>
+                        </form>
+                    `;
+                } else {
+                    title.textContent = 'Entrar na Conta';
+                    body.innerHTML = `
+                        <form onsubmit="app.handleAuthSubmit(event)" class="space-y-3 text-xs sm:text-sm">
+                            <div id="loginErr" class="hidden p-2.5 rounded-xl bg-rose-500/20 text-rose-600 text-xs font-semibold"></div>
+                            <div>
+                                <label class="block font-semibold mb-1">E-mail Cadastrado *</label>
+                                <input type="email" name="email" required class="w-full px-3 py-2 rounded-xl border border-country-300 dark:border-country-700 bg-transparent">
+                            </div>
+                            <div>
+                                <label class="block font-semibold mb-1">Senha *</label>
+                                <input type="password" name="password" required class="w-full px-3 py-2 rounded-xl border border-country-300 dark:border-country-700 bg-transparent">
+                            </div>
+                            <button type="submit" class="w-full py-3 rounded-full btn-gradient-country font-semibold">Fazer Login</button>
+                            <p class="text-center text-xs text-country-500">Novo por aqui? <button type="button" onclick="app.renderAuthModalContent('register')" class="underline font-bold">Criar Cadastro</button></p>
+                        </form>
+                    `;
+                }
+            },
+
+            handleRegisterSubmit(e) {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const name = fd.get('name').trim();
+                const email = fd.get('email').trim().toLowerCase();
+                const password = fd.get('password').trim();
+                const errBox = document.getElementById('regErr');
+
+                if (!this.isAllowedEmailProvider(email)) {
+                    errBox.textContent = 'E-mail deve ser de provedor autorizado (Gmail, Outlook, Yahoo, iCloud, Proton, Tuta ou Zoho).';
+                    errBox.classList.remove('hidden');
+                    return;
+                }
+
+                if (this.state.customers.some(c => c.email.toLowerCase() === email) || this.state.admins.some(a => a.email.toLowerCase() === email)) {
+                    errBox.textContent = 'Este e-mail já possui cadastro. Faça login.';
+                    errBox.classList.remove('hidden');
+                    return;
+                }
+
+                const newCust = { name, email, password };
+                this.state.customers.push(newCust);
+                localStorage.setItem('ei_customers_v1', JSON.stringify(this.state.customers));
+
+                this.state.user = { name, email, role: 'cliente' };
+                localStorage.setItem('ei_user', JSON.stringify(this.state.user));
+
+                this.updateUserHeaderUI();
+                this.closeAuthModal();
+                this.showToast(`Bem-vindo, ${name}!`, 'success');
+            },
+
+            handleAuthSubmit(e) {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const email = fd.get('email').trim().toLowerCase();
+                const password = fd.get('password').trim();
+                const errBox = document.getElementById('loginErr');
+
+                // Verifica Administrador Master ou adicional
+                const adm = this.state.admins.find(a => a.email.toLowerCase() === email);
+                if (adm) {
+                    if (adm.password !== password) {
+                        errBox.textContent = 'Senha incorreta.';
+                        errBox.classList.remove('hidden');
+                        return;
+                    }
+                    this.state.user = { name: adm.name, email: adm.email, role: adm.isOwner ? 'owner' : 'admin' };
+                    localStorage.setItem('ei_user', JSON.stringify(this.state.user));
+                    this.updateUserHeaderUI();
+                    this.closeAuthModal();
+                    this.showToast(`Acesso autorizado, ${adm.name}!`, 'success');
+                    this.navigate('admin');
+                    return;
+                }
+
+                // Verifica Cliente Cadastrado
+                const cust = this.state.customers.find(c => c.email.toLowerCase() === email);
+                if (!cust) {
+                    errBox.textContent = 'Conta não encontrada. Você precisa criar um cadastro antes de entrar.';
+                    errBox.classList.remove('hidden');
+                    return;
+                }
+
+                if (cust.password !== password) {
+                    errBox.textContent = 'Senha incorreta.';
+                    errBox.classList.remove('hidden');
+                    return;
+                }
+
+                this.state.user = { name: cust.name, email: cust.email, role: 'cliente' };
+                localStorage.setItem('ei_user', JSON.stringify(this.state.user));
+                this.updateUserHeaderUI();
+                this.closeAuthModal();
+                this.showToast(`Bem-vindo de volta, ${cust.name}!`, 'success');
+            },
+
+            logoutUser() {
+                this.state.user = null;
+                localStorage.removeItem('ei_user');
+                sessionStorage.removeItem('ei_user');
+                this.updateUserHeaderUI();
+                this.closeAuthModal();
+                this.navigate('home');
+                this.showToast('Sessão encerrada.');
+            },
+
+            updateUserHeaderUI() {
+                const label = document.getElementById('userStatusLabel');
+                const icon = document.getElementById('userAccountIcon');
+                if (this.state.user) {
+                    label.textContent = this.state.user.name.split(' ')[0];
+                    icon.className = 'ph-fill ph-user-check text-lg text-country-500';
+                } else {
+                    label.textContent = 'Entrar';
+                    icon.className = 'ph ph-user text-lg';
+                }
+            },
+
+            /* ADMIN DASHBOARD */
+            renderAdminDashboard() {
+                const kpis = document.getElementById('adminKpiGrid');
+                kpis.innerHTML = `
+                    <div class="p-4 rounded-2xl glass-panel">
+                        <span class="text-xs text-country-500">Produtos no Acervo</span>
+                        <p class="font-serif text-2xl font-bold">${this.state.products.length}</p>
+                    </div>
+                    <div class="p-4 rounded-2xl glass-panel">
+                        <span class="text-xs text-country-500">Unidades em Estoque</span>
+                        <p class="font-serif text-2xl font-bold">${this.state.products.reduce((a, b) => a + Number(b.stock), 0)}</p>
+                    </div>
+                `;
+
+                const tbody = document.getElementById('adminProductsTableBody');
+                tbody.innerHTML = this.state.products.map(p => `
+                    <tr>
+                        <td class="py-3 px-4 font-semibold">${p.name}</td>
+                        <td class="py-3 px-4 text-country-500">${p.sku}</td>
+                        <td class="py-3 px-4">${p.category}</td>
+                        <td class="py-3 px-4 font-bold">${this.formatCurrency(p.price)}</td>
+                        <td class="py-3 px-4">${p.stock} un.</td>
+                        <td class="py-3 px-4 text-right">
+                            <button onclick="app.deleteProduct('${p.id}')" class="text-rose-500 hover:underline">Excluir</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                this.renderAdminSecuritySection();
+            },
+
+            switchAdminTab(t) {
+                ['products', 'orders', 'security'].forEach(tab => {
+                    document.getElementById(`adminSection-${tab}`)?.classList.toggle('hidden', tab !== t);
+                });
+            },
+
+            renderAdminSecuritySection() {
+                const list = document.getElementById('adminAccountsListContainer');
+                if (!list) return;
+                list.innerHTML = this.state.admins.map(a => `
+                    <div class="p-2.5 rounded-xl border border-country-300 dark:border-country-700 flex justify-between text-xs">
+                        <div><strong>${a.name}</strong> (${a.email})</div>
+                        ${a.isOwner ? '<span class="font-bold text-country-500">Dono Master</span>' : ''}
+                    </div>
+                `).join('');
+            },
+
+            handleChangeAdminPassword(e) {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const cur = fd.get('currentPassword');
+                const nova = fd.get('newPassword');
+                const conf = fd.get('confirmPassword');
+                const adm = this.state.admins.find(a => a.email.toLowerCase() === this.state.user.email.toLowerCase());
+
+                if (adm.password !== cur) {
+                    this.showToast('Senha atual incorreta.', 'error');
+                    return;
+                }
+                if (nova !== conf) {
+                    this.showToast('Senhas não coincidem.', 'error');
+                    return;
+                }
+
+                adm.password = nova;
+                localStorage.setItem('ei_admins_v1', JSON.stringify(this.state.admins));
+                e.target.reset();
+                this.showToast('Senha alterada com sucesso!', 'success');
+            },
+
+            handleAddAdminAccount(e) {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const email = fd.get('adminEmail').trim().toLowerCase();
+
+                if (!this.isAllowedEmailProvider(email)) {
+                    this.showToast('E-mail do administrador deve ser de provedor oficial.', 'error');
+                    return;
+                }
+
+                this.state.admins.push({
+                    name: fd.get('adminName'),
+                    email,
+                    password: fd.get('adminPassword'),
+                    isOwner: false
+                });
+
+                localStorage.setItem('ei_admins_v1', JSON.stringify(this.state.admins));
+                e.target.reset();
+                this.renderAdminSecuritySection();
+                this.showToast('Novo administrador cadastrado com sucesso!', 'success');
+            },
+
+            deleteProduct(id) {
+                this.state.products = this.state.products.filter(p => p.id !== id);
+                localStorage.setItem('ei_products_v3', JSON.stringify(this.state.products));
+                this.renderAdminDashboard();
+                this.renderHomeBestSellers();
+                this.showToast('Produto excluído.');
+            },
+
+            openAdminProductModal() {
+                document.getElementById('infoModalTitle').textContent = 'Cadastrar Novo Produto';
+                document.getElementById('infoModalContent').innerHTML = `
+                    <form onsubmit="app.saveAdminProduct(event)" class="space-y-3">
+                        <input type="text" name="name" required placeholder="Nome do Produto" class="w-full px-3 py-2 rounded-xl border border-country-300 dark:border-country-700 bg-transparent">
+                        <input type="text" name="sku" required value="EI-${Math.floor(1000 + Math.random()*9000)}" class="w-full px-3 py-2 rounded-xl border border-country-300 dark:border-country-700 bg-transparent">
+                        <select name="category" class="w-full px-3 py-2 rounded-xl border border-country-300 dark:border-country-700 bg-transparent">
+                            <option value="Botas Texanas">Botas Texanas</option>
+                            <option value="Chapéus & Feltros">Chapéus & Feltros</option>
+                            <option value="Camisaria">Camisaria</option>
+                            <option value="Jaquetas & Couro">Jaquetas & Couro</option>
+                        </select>
+                        <input type="number" step="0.01" name="price" required placeholder="Preço (ex: 799.90)" class="w-full px-3 py-2 rounded-xl border border-country-300 dark:border-country-700 bg-transparent">
+                        <input type="url" name="image" required value="https://images.unsplash.com/photo-1520639888713-7851133b1ed0?auto=format&fit=crop&w=900&q=85" class="w-full px-3 py-2 rounded-xl border border-country-300 dark:border-country-700 bg-transparent">
+                        <textarea name="description" required placeholder="Descrição" class="w-full px-3 py-2 rounded-xl border border-country-300 dark:border-country-700 bg-transparent"></textarea>
+                        <button type="submit" class="w-full py-3 rounded-full btn-gradient-country font-semibold">Salvar Produto</button>
+                    </form>
+                `;
+                document.getElementById('infoModalOverlay').classList.remove('hidden');
+            },
+
+            saveAdminProduct(e) {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                this.state.products.unshift({
+                    id: 'prod-' + Date.now(),
+                    name: fd.get('name'),
+                    sku: fd.get('sku'),
+                    category: fd.get('category'),
+                    price: parseFloat(fd.get('price')),
+                    rating: 5.0,
+                    reviewsCount: 1,
+                    stock: 10,
+                    colors: ['Couro Pinhão'],
+                    sizes: ['P', 'M', 'G'],
+                    image: fd.get('image'),
+                    gallery: [fd.get('image')],
+                    description: fd.get('description'),
+                    materials: 'Couro nobre certificado.'
+                });
+                localStorage.setItem('ei_products_v3', JSON.stringify(this.state.products));
+                this.closeInfoModal();
+                this.renderAdminDashboard();
+                this.renderHomeBestSellers();
+                this.showToast('Produto cadastrado!', 'success');
+            },
+
+            openCheckoutModal() {
+                this.closeCartDrawer();
+                this.showToast('Pedido registrado com sucesso no banco de dados!', 'success');
+                this.state.cart = [];
+                this.saveCart();
+                this.updateHeaderCounters();
+            },
+
+            openSizeGuideModal() {
+                document.getElementById('infoModalTitle').textContent = 'Guia de Medidas Country';
+                document.getElementById('infoModalContent').innerHTML = `
+                    <div class="space-y-4 text-xs">
+                        <p><strong>Chapéus:</strong> 55 (P: 54-55cm), 57 (M: 56-57cm), 59 (G: 58-59cm), 61 (GG: 60-61cm).</p>
+                        <p><strong>Botas:</strong> Fôrma padrão brasileira com bico quadrado anatômico. Peça seu número usual.</p>
+                    </div>
+                `;
+                document.getElementById('infoModalOverlay').classList.remove('hidden');
+            },
+
+            openContactModal() {
+                document.getElementById('infoModalTitle').textContent = 'Fale Conosco';
+                document.getElementById('infoModalContent').innerHTML = `<p class="text-xs text-country-500">Atendimento Haras e Western Store: contato@estanciaimperial.com.br</p>`;
+                document.getElementById('infoModalOverlay').classList.remove('hidden');
+            },
+
+            closeInfoModal() {
+                document.getElementById('infoModalOverlay').classList.add('hidden');
+            },
+
+            toggleChatbox(st) {
+                const el = document.getElementById('supportChatWindow');
+                if (typeof st === 'boolean') el.classList.toggle('hidden', !st);
+                else el.classList.toggle('hidden');
+            },
+
+            handleChatSubmit(e) {
+                e.preventDefault();
+                const inp = document.getElementById('chatInputField');
+                const t = inp.value.trim();
+                if (!t) return;
+                inp.value = '';
+                const c = document.getElementById('chatMessagesContainer');
+                c.innerHTML += `<div class="bg-country-500 text-white p-2.5 rounded-2xl text-right">${t}</div>`;
+                setTimeout(() => {
+                    c.innerHTML += `<div class="bg-country-200/60 dark:bg-country-800/80 p-2.5 rounded-2xl">Agradecemos sua mensagem! Nossa equipe entrará em contato.</div>`;
+                    c.scrollTop = c.scrollHeight;
+                }, 400);
+            },
+
+            formatCurrency(v) {
+                return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            },
+
+            showToast(msg, type = 'info') {
+                const c = document.getElementById('toastContainer');
+                if (!c) return;
+                const t = document.createElement('div');
+                t.className = 'px-4 py-2.5 rounded-2xl glass-panel shadow-2xl text-xs font-semibold';
+                t.textContent = msg;
+                c.appendChild(t);
+                setTimeout(() => t.remove(), 3000);
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+    </script>
+</body>
+</html>
